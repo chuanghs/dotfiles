@@ -5,10 +5,8 @@ return {
 	},
 	version = "*",
 	-- all modules handle lazy loading internally
-	lazy = false,
+	-- lazy = false,
 	opts = {
-		chartoggle = { enabled = true },
-		tree = { enabled = true },
 		keymap = {
 			-- Each keymap may be a list of commands and/or functions
 			preset = "enter",

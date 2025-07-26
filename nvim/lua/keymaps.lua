@@ -17,6 +17,7 @@ vim.keymap.set('n', '<C-k>', '<C-w>k', opts)
 vim.keymap.set('n', '<C-l>', '<C-w>l', opts)
 
 
+
 -- Resize with arrows
 -- delta: 2 lines
 vim.keymap.set('n', '<C-Up>', ':resize -2<CR>', opts)
@@ -34,7 +35,7 @@ vim.keymap.set('v', '>', '>gv', opts)
 
 
 -- emacs like navigation
-vim.keymap.set('n', '<C-b>', '^', opts)
+vim.keymap.set('n', '<C-a>', '^', opts)
 vim.keymap.set('n', '<C-e>', '$', opts)
-vim.keymap.set('i', '<C-b>', '<ESC>^i', opts)
+vim.keymap.set('i', '<C-a>', '<ESC>^i', opts)
 vim.keymap.set('i', '<C-e>', '<ESC>$a', opts)
