@@ -5,7 +5,7 @@ return {
 	},
 	version = "*",
 	-- all modules handle lazy loading internally
-	-- lazy = false,
+	lazy = false,
 	opts = {
 		keymap = {
 			-- Each keymap may be a list of commands and/or functions
@@ -25,7 +25,7 @@ return {
 			nerd_font_variant = "mono",
 		},
 		sources = {
-			default = { "lsp", "path", "snippets", "buffer" },
+			default = { "lsp", "path", "snippets", "buffer", "omni" },
 		},
 		fuzzy = { implementation = "prefer_rust_with_warning" },
 		completion = {

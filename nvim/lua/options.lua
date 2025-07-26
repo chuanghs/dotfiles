@@ -8,6 +8,15 @@ vim.opt.tabstop = 8 -- number of visual spaces per TAB
 vim.opt.softtabstop = 8 -- number of spacesin tab when editing
 vim.opt.shiftwidth = 8 -- insert 4 spaces on a tab
 vim.opt.expandtab = false -- tabs are spaces, mainly because of python
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "py" },
+	callback = function()
+		vim.opt.tabstop = 4 -- the number of visual spaces per TAB
+		vim.opt.softtabstop = 4 -- number of spacesin tab when editing
+		vim.opt.shiftwidth = 4 -- insert 4 spaces on a tab
+		vim.opt.expandtab = true -- tabs are spaces, mainly because of python
+	end,
+})
 
 -- UI config
 vim.opt.number = true -- show absolute number

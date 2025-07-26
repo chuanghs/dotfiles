@@ -29,7 +29,7 @@ return {
 		lspconfig.ts_ls.setup({})
 		lspconfig.fsautocomplete.setup({})
 		-- Run this first: julia --project=~/.julia/environments/nvim-lspconfig -e 'using Pkg; Pkg.add("LanguageServer")'
-		lspconfig.julials.setup({})
+		-- lspconfig.julials.setup({})
 		lspconfig.elixirls.setup({
 			-- NOTE: The cmd must be set and the $HOME and ~ are not expanded.
 			cmd = { "/Users/martinlwx/.local/share/nvim/mason/packages/elixir-ls/language_server.sh" },
