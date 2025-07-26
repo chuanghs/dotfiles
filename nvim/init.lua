@@ -8,3 +8,4 @@ vim.opt.termguicolors = true
 require('options')
 require('keymaps')
 require('plugin-manager')
+require("lsp")
