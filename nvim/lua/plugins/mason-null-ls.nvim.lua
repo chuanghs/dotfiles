@@ -6,6 +6,6 @@ return {
 		"nvimtools/none-ls.nvim",
 	},
 	config = function()
-		require("your.null-ls.config") -- require your null-ls config here (example below)
+		require("configs.mason-null-ls") -- require your null-ls config here (example below)
 	end,
 }

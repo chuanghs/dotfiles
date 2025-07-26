@@ -1,5 +1,5 @@
 return {
-	'saghen/blink.nvim',
+	"saghen/blink.cmp",
 	dependencies = {
 		"rafamadriz/friendly-snippets" 
 	},
