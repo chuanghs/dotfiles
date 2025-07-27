@@ -3,12 +3,16 @@ return {
 	config = function()
 		local lint = require("lint")
 
+		-- NOTE: Install formatters with Mason
 		lint.linters_by_ft = {
-			python = { "mypy" },
+			python = { "ruff" },
 		}
 
+		-- When to trigger lint? I bind it to some events as follows:
+		--   BufEnter: enter a buffer.
+		--   BufWritePost: save a buffer.
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
-			callback = function()
+	 		callback = function()
 				lint.try_lint()
 			end,
 		})

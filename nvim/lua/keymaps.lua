@@ -39,3 +39,7 @@ vim.keymap.set('n', '<C-a>', '^', opts)
 vim.keymap.set('n', '<C-e>', '$', opts)
 vim.keymap.set('i', '<C-a>', '<ESC>^i', opts)
 vim.keymap.set('i', '<C-e>', '<ESC>$a', opts)
+
+
+-- try run current script directly
+vim.keymap.set('n', '<leader>cpr', ':sp <CR> :term python3 % <CR>', opt)
