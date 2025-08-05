@@ -7,7 +7,7 @@ return {
 		require('orgmode').setup({
 			org_agenda_files = '~/orgfiles/**/*',
 			org_default_notes_file = '~/orgfiles/inbox.org',
-			org_todo_keywords = { 'NA', 'TODO', 'WAITING', '|', 'DONE', 'CANCEL'},
+			org_todo_keywords = { 'NA', 'WAITING', '|', 'DONE', 'CANCEL'},
 		})
 
 		-- NOTE: If you are using nvim-treesitter with ~ensure_installed = "all"~ option
