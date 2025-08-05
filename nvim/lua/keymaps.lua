@@ -42,4 +42,7 @@ vim.keymap.set('i', '<C-e>', '<ESC>$a', opts)
 
 
 -- try run current script directly
-vim.keymap.set('n', '<leader>cpr', ':sp <CR> :term python3 % <CR>', opt)
+vim.keymap.set('n', '<leader>cpr', ':sp <CR> :term python3 % <CR>', opts)
+
+-- use lazygit for git integration
+vim.keymap.set('n', '<leader>ct', ':TermExec direction="float" cmd="lg"<CR>', opts)
