@@ -1,0 +1,48 @@
+-- define common options
+local opts = {
+    noremap = true,      -- non-recursive
+    silent = true,       -- do not show message
+}
+
+vim.g.mapleader = " "
+-----------------
+-- Normal mode --
+-----------------
+
+-- Hint: see `:h vim.map.set()`
+-- Better window navigation
+vim.keymap.set('n', '<C-h>', '<C-w>h', opts)
+vim.keymap.set('n', '<C-j>', '<C-w>j', opts)
+vim.keymap.set('n', '<C-k>', '<C-w>k', opts)
+vim.keymap.set('n', '<C-l>', '<C-w>l', opts)
+
+
+
+-- Resize with arrows
+-- delta: 2 lines
+vim.keymap.set('n', '<C-Up>', ':resize -2<CR>', opts)
+vim.keymap.set('n', '<C-Down>', ':resize +2<CR>', opts)
+vim.keymap.set('n', '<C-Left>', ':vertical resize -2<CR>', opts)
+vim.keymap.set('n', '<C-Right>', ':vertical resize +2<CR>', opts)
+
+-----------------
+-- Visual mode --
+-----------------
+
+-- Hint: start visual mode with the same area as the previous area and the same mode
+vim.keymap.set('v', '<', '<gv', opts)
+vim.keymap.set('v', '>', '>gv', opts)
+
+
+-- emacs like navigation
+vim.keymap.set('n', '<C-a>', '^', opts)
+vim.keymap.set('n', '<C-e>', '$', opts)
+vim.keymap.set('i', '<C-a>', '<ESC>^i', opts)
+vim.keymap.set('i', '<C-e>', '<ESC>$a', opts)
+
+
+-- try run current script directly
+vim.keymap.set('n', '<leader>cpr', ':sp <CR> :term python3 % <CR>', opts)
+
+-- use lazygit for git integration
+vim.keymap.set('n', '<leader>ct', ':TermExec direction="float" cmd="lg"<CR>', opts)
