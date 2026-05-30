@@ -1,5 +1,21 @@
 ;;; -*- lexical-binding: t -*-
 
+;; for performance
+(setq jit-lock-stealth-time 1.25)
+(setq jit-lock-stealth-nice 0.5) ;; Seconds between font locking.
+(setq jit-lock-chunk-size 4096)
+(setq jit-lock-defer-time 0.25)
+
+;; enforce utf-8
+;; Force UTF-8 for everything
+(set-language-environment "UTF-8")
+(setq locale-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+(prefer-coding-system 'utf-8)
+
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -12,7 +28,7 @@
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(beancount corfu-terminal eat gemini-cli haskell-mode
+   '(beancount corfu-terminal deadgrep eat gemini-cli haskell-mode
 	       markdown-preview-mode org-roam org-roam-ui popup
 	       solarized-theme vulpea))
  '(package-vc-selected-packages
@@ -131,27 +147,51 @@
 
 
 ;; setup roam
-;(use-package org-roam)
-;(setq org-roam-directory "~/orgfiles/note")
-					;(setq find-file-visit-truename t)
-;(add-hook 'after-init-hooko 'org-roam-mode)
-;(setq org-roam-server-host "127.0.0.1"
-;      org-roam-server-port 9090
-;      org-roam-server-export-inline-images t
-;      org-roam-server-authenticate nil
-;      org-roam-server-network-label-truncate t
-;      org-roam-server-network-label-truncate-length 60
-;      org-roam-server-network-label-wrap-length 20)
-;(org-roam-db-autosync-mode)
-;(setq org-roam-node-display-template
-;      (concat "${title:*} "
-;	      (propertize "${tag:10}" 'face 'org-tag)))
-;(add-to-list 'display-buffer-alist
-;;             '("\\*org-roam\\*"
-;               (display-buffer-in-direction)
-;               (direction . right)
-;               (window-width . 0.33)
-;               (window-height . fit-window-to-buffer)))
+(use-package deadgrep)
+(use-package org-roam
+  :ensure t
+  :init
+  (setq org-roam-directory (file-truename "~/orgfiles/note"))
+  :config
+  ;; 啟動模式與同步
+  (org-roam-db-autosync-mode 1)
+  ;; utf-8 node name
+  (setq org-roam-capture-templates
+	'(("d" "default" plain "%?"
+           :if-new (file-head "node/%<%Y%m%d%H%M%S>-${slug}.org" 
+                              "#+title: ${title}\n#+created: %U\n")
+           :unnarrowed t)))  
+  ;; 節點顯示模板
+  (setq org-roam-node-display-template
+        (concat "${title:*} "
+                (propertize "${tag:10}" 'face 'org-tag)))
+
+  ;; 視窗佈局設定
+  (add-to-list 'display-buffer-alist
+               '("\\*org-roam\\*"
+                 (display-buffer-in-direction)
+                 (direction . right)
+                 (window-width . 0.33)
+                 (window-height . fit-window-to-buffer)))
+  (defun org-roam-deadgrep (arg)
+    (interactive "MSearch term: ")
+    (deadgrep arg org-roam-directory))
+  :bind (("C-c n f" . org-roam-node-find)
+           ("C-c n r" . org-roam-node-random)		    
+           ("C-c n c" . org-roam-capture)
+           ("C-c n g" . org-roam-graph)
+	   ("C-c n s" . org-roam-deadgrep)
+	   ("C-c n y" . org-roam-copy-node)
+           (:map org-mode-map
+                 (
+
+		  ("C-c n i" . org-roam-node-insert)
+		  ("C-c n I" . org-roam-node-insert-immediate)
+                  ("C-c n o" . org-id-get-create)
+                  ("C-c n t" . org-roam-tag-add)
+                  ("C-c n a" . org-roam-alias-add)
+		  ("C-c n l" . org-roam-buffer-toggle)	   
+		  ))))
 
 ;; enable gemini-cli
 ;; for eat terminal backend:
@@ -167,12 +207,14 @@
 ;  :config (gemini-cli-mode)
 ;  :bind-keymap ("C-c c" . gemini-cli-command-map)) ;; or your preferred key
 
-
 ; beancount mode
-(add-hook 'beancount-mode-hook
-	  (lambda () (setq-local electric-indent-chars nil)))
-(add-hook 'beancount-mode-hook #'outline-minor-mode)
-(with-eval-after-load 'beancount
-  (define-key beancount-mode-map (kbd "C-c C-n") #'outline-next-visible-heading)
-  (define-key beancount-mode-map (kbd "C-c C-p") #'outline-previous-visible-heading))
-;(add-hook 'beancount-mode-hook #'flymake-bean-check-enable) ;use bean-check on the fly, wait when pyenv is work again
+(use-package beancount
+  :ensure t
+  :mode ("\\.beancount\\'" . beancount-mode)
+  :hook
+  ((beancount-mode . (lambda () (setq-local electric-indent-chars nil)))
+   (beancount-mode . outline-minor-mode)
+   (beancount-mode . flymake-bean-check-enable))
+  :bind (:map beancount-mode-map
+              ("C-c C-n" . outline-next-visible-heading)
+              ("C-c C-p" . outline-previous-visible-heading)))
