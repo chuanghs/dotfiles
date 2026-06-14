@@ -34,7 +34,7 @@
  '(package-vc-selected-packages
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
  '(tool-bar-mode nil)
- '(vulpea-db-sync-directories '("~/orgfiles/")))
+ '(vulpea-db-sync-directories '("~/orgfiles")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -158,13 +158,12 @@
   ;; utf-8 node name
   (setq org-roam-capture-templates
 	'(("d" "default" plain "%?"
-           :if-new (file-head "node/%<%Y%m%d%H%M%S>-${slug}.org" 
+           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" 
                               "#+title: ${title}\n#+created: %U\n")
            :unnarrowed t)))  
   ;; 節點顯示模板
-  (setq org-roam-node-display-template
-        (concat "${title:*} "
-                (propertize "${tag:10}" 'face 'org-tag)))
+;  (setq org-roam-node-display-template "${title} ${tags}")
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
 
   ;; 視窗佈局設定
   (add-to-list 'display-buffer-alist
