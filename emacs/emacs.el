@@ -23,14 +23,18 @@
  ;; If there is more than one, they won't work right.
  '(column-number-mode t)
  '(eglot-confirm-server-edits nil nil nil "Customized with use-package eglot")
+ '(org-agenda-files
+   '("~/orgfiles/setup_emacs_with_xcode.org"
+     "/Users/zombie/orgfiles/journal.org"))
  '(package-archives
    '(("gnu" . "https://elpa.gnu.org/packages/")
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
    '(beancount corfu-terminal deadgrep eat gemini-cli haskell-mode
-	       markdown-preview-mode org-roam org-roam-ui popup
-	       solarized-theme vulpea))
+	       marginalia markdown-preview-mode orderless org-roam
+	       org-roam-ui popup solarized-theme swift-mode
+	       swift-ts-mode vertico vulpea))
  '(package-vc-selected-packages
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
  '(tool-bar-mode nil)
@@ -61,7 +65,6 @@
 
 (setq user-full-name "Zombie Chuang" user-mail-address "chuanghs@gmail.com")
 
-
 ;; Try setup python
 ;; check tree-sitter exist in emacs
 ;; M-: (treesit-available-p) RET should be t
@@ -70,6 +73,33 @@
 ;(setq major-mode-remap-alist '((python-mode . python-ts-mode)))
 ;; install python3-pylsp from console
 ;; package-install corfu
+(use-package eglot
+  :ensure t
+  :defer
+  :hook ((swift-mode . eglot-ensure))
+  ;; optimize eglot
+  :config
+   ;; 告訴 Eglot 如何啟動 sourcekit-lsp
+  (add-to-list 'eglot-server-programs
+               '(swift-mode . ("sourcekit-lsp")))
+
+  (setq eglot-sync-connect nil)  ;; async connection, prevent jam emacs
+  (setq eglot-connect-timeout 60)   ;; increase timeout for large project
+  )
+
+(use-package swift-mode
+  :ensure t
+  :mode ("\\.swift\\'" . swift-mode))
+; switf-ts-mode cannodt handle font-lock for keyword:
+;(use-package swift-ts-mode
+;  :ensure t
+;  :mode ("\\.swift\\'" . swift-ts-mode) ;; 自動將 .swift 檔案關聯到此模式
+;  :config
+;; 連結 Eglot 與 SourceKit-LSP, 應該可以用 eglot 裡的設定取代
+;; (add-to-list 'eglot-server-programs
+;;               '(swift-ts-mode . ("sourcekit-lsp"))) 
+  ;; 設定當進入 swift-ts-mode 時自動啟動 Eglot
+;  (add-hook 'swift-ts-mode-hook 'eglot-ensure))
 ;(use-package eglot
 ;  :ensure t
 ;  :defer t
@@ -118,6 +148,12 @@
 
 ;; Setup Org-Mode (capture template and actions)
 (setq org-agenda-files '("~/orgfiles/journal.org" "~/orgfiles/projects"))
+(with-eval-after-load 'org (global-org-modern-mode))
+(setq org-modern-fold-stars
+      '(("▶" . "▼")
+        ("▷" . "▽")
+        ("▸" . "▾")
+        ("▹" . "▿")))
 (setq org-log-done 'time)
 (setq org-return-follows-link t)
 (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
@@ -146,8 +182,32 @@
 ;; NEXT STEP: introduce org-roam for personal knowledge management ?
 
 
+;; Enable Vertico
+(use-package vertico
+  :init
+  (vertico-mode))
+
+;; Enable Marginalia for descriptions in the Vertico minibuffer
+(use-package marginalia
+  :bind (:map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+  :init
+  (marginalia-mode))
+
+;; Use Orderless for advanced pattern matching
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+
 ;; setup roam
 (use-package deadgrep)
+(defun org-roam-deadgrep (arg)
+  (interactive "MSearch term: ")
+  (deadgrep arg org-roam-directory))
+
 (use-package org-roam
   :ensure t
   :init
@@ -172,9 +232,6 @@
                  (direction . right)
                  (window-width . 0.33)
                  (window-height . fit-window-to-buffer)))
-  (defun org-roam-deadgrep (arg)
-    (interactive "MSearch term: ")
-    (deadgrep arg org-roam-directory))
   :bind (("C-c n f" . org-roam-node-find)
            ("C-c n r" . org-roam-node-random)		    
            ("C-c n c" . org-roam-capture)
@@ -183,7 +240,7 @@
 	   ("C-c n y" . org-roam-copy-node)
            (:map org-mode-map
                  (
-
+		  
 		  ("C-c n i" . org-roam-node-insert)
 		  ("C-c n I" . org-roam-node-insert-immediate)
                   ("C-c n o" . org-id-get-create)
