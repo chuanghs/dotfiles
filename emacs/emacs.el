@@ -31,9 +31,10 @@
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(beancount corfu-terminal deadgrep eat gemini-cli haskell-mode magit
-	       marginalia markdown-preview-mode orderless org-roam
-	       org-roam-ui popup projectile projectile-ripgrep
+   '(beancount company company-org-block corfu-terminal deadgrep eat
+	       gemini-cli haskell-mode lsp-pyright magit marginalia
+	       markdown-preview-mode orderless org-roam org-roam-ui
+	       popup projectile projectile-ripgrep pyvenv-auto
 	       solarized-theme swift-mode swift-ts-mode vertico vulpea))
  '(package-vc-selected-packages
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
@@ -86,21 +87,40 @@
 ;; M-: (treesit-available-p) RET should be t
 ;; install python languar grammer
 ;; M-x treesit-install-language-grammer RET type python
-;(setq major-mode-remap-alist '((python-mode . python-ts-mode)))
+(setq major-mode-remap-alist '((python-mode . python-ts-mode)))
 ;; install python3-pylsp from console
 ;; package-install corfu
+(use-package python
+  :mode ("\\.py\\'" . python-ts-mode)
+  :hook (python-ts-mode . eglot-ensure))
+;  :config
+;  (add-to-list 'eglot-server-programs
+;	       '(python-ts-mode . ("pyright-langserver" "--stdio"))))
+
+(use-package pyvenv
+  :init
+  (require 'widget)
+  :config (pyvenv-mode 1))
+
 (use-package eglot
   :ensure t
   :defer
-  :hook ((swift-mode . eglot-ensure))
+  :hook ((swift-mode . eglot-ensure)
+	 (python-mode . eglot-ensure)
+	 (python-ts-mode . eglot-ensure)
+	 (go-mode . eglot-ensure) )
   ;; optimize eglot
   :config
    ;; 告訴 Eglot 如何啟動 sourcekit-lsp
   (add-to-list 'eglot-server-programs
-               '(swift-mode . ("sourcekit-lsp")))
-
+               '(swift-mode . ("sourcekit-lsp"))
+	       '(python-ts-mode . ("pyright-langserver" "--stdio")))
   (setq eglot-sync-connect nil)  ;; async connection, prevent jam emacs
   (setq eglot-connect-timeout 60)   ;; increase timeout for large project
+  :custom
+  (eglot-confirm-server-initiated-edits nil)
+  (eglot-extend-to-xref t)
+  (eglot-autoshutdown t)
   )
 
 (use-package swift-mode
@@ -115,43 +135,19 @@
 ;; (add-to-list 'eglot-server-programs
 ;;               '(swift-ts-mode . ("sourcekit-lsp"))) 
   ;; 設定當進入 swift-ts-mode 時自動啟動 Eglot
-;  (add-hook 'swift-ts-mode-hook 'eglot-ensure))
-;(use-package eglot
-;  :ensure t
-;  :defer t
-;  :hook ((python-mode . eglot-ensure)
-;	 (python-ts-mode . eglot-ensure)
-;         (go-mode . eglot-ensure))
-;  :config
-;  (add-to-list 'eglot-server-programs
-;               `(python-mode
-;                 . ,(eglot-alternatives '(("pyright-langserver" "--stdio")
-;                                          "jedi-language-server"
-;                                          "pylsp"))))
-;  :config
-;  (add-hook 'haskell-mode-hook 'eglot-ensure)  ; start eglot automatically in haskell projects
-;  :config
-;  (setq-default eglot-workspace-configuration
-;		'(:haskell (:plugin (:stan (:globalOn :json-false)) ; disable stan
-;				    :formattingProvider "fourmolu")))   ; use fourmolu instead of ormulu
-;  :custom
-;  (eglot-autoshutdown t)  ; shutdown language server after closing last file
-;  (eglot-confirm-server-initiated-edits nil)  ; allow edit without confirmation
-;  )
+					;  (add-hook 'swift-ts-mode-hook 'eglot-ensure))
 
-;(use-package python-black
-;  :ensure t
-;  :demand t
-;  :after python
-;  :hook ((python-mode . python-black-on-save-mode)))
 
-;(use-package pyenv-mode
-;  :ensure t
-;  :init
-;  (add-to-list 'exec-path "~/.pyenv/shims")
-;  (setenv "WORKON_HOME" "~/.pyenv/versions/")
-;  :config
-;  (pyenv-mode))
+(use-package python-black
+  :ensure t
+  :demand t
+  :after python
+  :hook ((python-mode . python-black-on-save-mode)))
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '(python-ts-mode . ("pyright-langserver" "--stdio" :initializationOptions (:format (:enabled :json-false)))))
+  )
+
 
 ;(use-package pyconf
 ;  :ensure t)
