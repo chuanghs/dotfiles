@@ -149,11 +149,6 @@
   )
 
 
-;(use-package pyconf
-;  :ensure t)
-
-;(defalias 'workon 'pyvenv-workon)
-
 ;; Completion UI
 (global-corfu-mode)
 (setq tab-always-indent 'complete)
