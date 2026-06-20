@@ -31,10 +31,10 @@
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(beancount corfu-terminal deadgrep eat gemini-cli haskell-mode
+   '(beancount corfu-terminal deadgrep eat gemini-cli haskell-mode magit
 	       marginalia markdown-preview-mode orderless org-roam
-	       org-roam-ui popup solarized-theme swift-mode
-	       swift-ts-mode vertico vulpea))
+	       org-roam-ui popup projectile projectile-ripgrep
+	       solarized-theme swift-mode swift-ts-mode vertico vulpea))
  '(package-vc-selected-packages
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
  '(tool-bar-mode nil)
@@ -64,6 +64,22 @@
 
 
 (setq user-full-name "Zombie Chuang" user-mail-address "chuanghs@gmail.com")
+
+;; projectile
+(use-package projectile
+  :ensure t
+  :init
+  (setq projectile-project-search-path '("~/Projects/"))
+  :config
+  ;; I typically use this keymap prefix on macOS
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  (global-set-key (kbd "C-c p") 'projectile-command-map)
+  (projectile-mode +1))
+
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status))
+  )
 
 ;; Try setup python
 ;; check tree-sitter exist in emacs
@@ -185,7 +201,7 @@
 ;; Enable Vertico
 (use-package vertico
   :init
-  (vertico-mode))
+  (vertico-mode +1))
 
 ;; Enable Marginalia for descriptions in the Vertico minibuffer
 (use-package marginalia
