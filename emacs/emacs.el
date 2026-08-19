@@ -17,7 +17,7 @@
 
 
 (custom-set-variables
- ;; custom-set-variables was added by Custom.
+ ;; custom-set-variables was added by Custom._
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
@@ -160,7 +160,7 @@
                          "~/orgfiles/journal.org"
                          "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "WAITING(w@/!)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")))
+      '((sequence "TODO(t!)" "NEXT(n!)" "WAITING(w@/!)" "SOMEDAY(s!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
 (setq org-tag-alist '((:startgroup)
                       ("@computer" . ?c)
@@ -181,7 +181,12 @@
         ("▷" . "▽")
         ("▸" . "▾")
         ("▹" . "▿")))
-(setq org-log-done 'time)
+
+;; 狀態更新時記錄 Log 筆記與時間戳記，並自動收納至 :LOGBOOK: Drawer
+(setq org-log-done 'note)                 ;; 任務完成 (DONE) 時彈出視窗輸入 Log Note
+(setq org-log-into-drawer "LOGBOOK")       ;; 所有狀態變更 Log、筆記皆自動存入 :LOGBOOK: 抽屜
+(setq org-log-reschedule 'note)           ;; 重新排程時提示輸入原因
+(setq org-log-redeadline 'note)           ;; 修改截止日 (DEADLINE) 時提示輸入原因
 (setq org-return-follows-link t)
 (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
 
@@ -335,3 +340,6 @@
 ; Hard code customize beancount-mode to support auto-complete for chinese account, leave it as comment because I manually fix it in package
 ;(with-eval-after-load 'beancount
 ;  (setq beancount-account-regexp "\\(?:Assets\\|E\\(?:quity\\|xpenses\\)\\|Income\\|Liabilities\\)\\(?::[[:alnum:][:upper:][:digit:]][[:alnum:]-_]+\\)+"))
+(global-auto-revert-mode t)
+(setq auto-revert-check-vc-info t)
+
