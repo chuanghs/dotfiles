@@ -22,20 +22,22 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(column-number-mode t)
- '(eglot-confirm-server-edits nil nil nil "Customized with use-package eglot")
+ '(current-language-environment "UTF-8")
  '(org-agenda-files
-   '("~/orgfiles/setup_emacs_with_xcode.org"
-     "/Users/zombie/orgfiles/journal.org"))
+   '("~/orgfiles/personal.org"
+     "~/orgfiles/journal.org"
+     "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
  '(package-archives
    '(("gnu" . "https://elpa.gnu.org/packages/")
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
    '(beancount company company-org-block corfu-terminal deadgrep eat
-	       gemini-cli haskell-mode lsp-pyright magit marginalia
-	       markdown-preview-mode orderless org-roam org-roam-ui
-	       popup projectile projectile-ripgrep pyvenv-auto
-	       solarized-theme swift-mode swift-ts-mode vertico vulpea))
+	       gemini-cli gherkin-mode haskell-mode lsp-pyright magit
+	       marginalia markdown-preview-mode multi-vterm orderless
+	       org-roam org-roam-ui popup projectile
+	       projectile-ripgrep pyvenv-auto solarized-theme
+	       swift-mode swift-ts-mode vertico vulpea vulpea-ui))
  '(package-vc-selected-packages
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
  '(tool-bar-mode nil)
@@ -45,7 +47,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Menlo" :foundry "nil" :slant normal :weight regular :height 140 :width normal)))))
+ )
 
 
 (load-theme 'solarized-dark t)
@@ -153,8 +155,26 @@
 (global-corfu-mode)
 (setq tab-always-indent 'complete)
 
-;; Setup Org-Mode (capture template and actions)
-(setq org-agenda-files '("~/orgfiles/journal.org" "~/orgfiles/projects"))
+;; Setup Org-Mode (GTD & Capture Templates)
+(setq org-agenda-files '("~/orgfiles/personal.org"
+                         "~/orgfiles/journal.org"
+                         "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "WAITING(w@/!)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")))
+
+(setq org-tag-alist '((:startgroup)
+                      ("@computer" . ?c)
+                      ("@phone"    . ?p)
+                      ("@errand"   . ?e)
+                      ("@home"     . ?h)
+                      ("@work"     . ?w)
+                      (:endgroup)
+                      ("health"    . ?H)
+                      ("running"   . ?R)
+                      ("travel"    . ?T)
+                      ("family"    . ?F)
+                      ("finance"   . ?$)))
+
 (with-eval-after-load 'org (global-org-modern-mode))
 (setq org-modern-fold-stars
       '(("▶" . "▼")
@@ -166,9 +186,25 @@
 (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
 
 (add-hook 'org-mode-hook 'org-indent-mode)
+
 (setq org-capture-templates
-      '(("t" "Tasks" entry (file+headline "~/orgfiles/journal.org" "Inbox") "* TODO %?\n %U")
-	("j" "Journal Entry" entry (file+olp+datetree "~/orgfiles/journal.org") "* %U\n%?")));; enable vulpea for better org-mod
+      '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "00_INBOX / Quick Capture (收集箱)")
+         "* TODO %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
+        ("n" "⚡ 下一步行動 (Next Action)" entry (file+headline "~/orgfiles/personal.org" "01_NEXT ACTIONS (下一步行動清單 - 按情境 Context 分流)")
+         "* NEXT %?\n  SCHEDULED: %t\n  記錄時間：%U" :empty-lines 1)
+        ("r" "🏃 跑步/生理速記 (Running)" entry (file+headline "~/orgfiles/personal.org" "00_INBOX / Quick Capture (收集箱)")
+         "* TODO %? :running:health:\n  記錄時間：%U" :empty-lines 1)
+        ("t" "Tasks (舊版任務)" entry (file+headline "~/orgfiles/journal.org" "Inbox") "* TODO %?\n %U")
+        ("j" "Journal Entry (日誌)" entry (file+olp+datetree "~/orgfiles/journal.org") "* %U\n%?")))
+
+(setq org-agenda-custom-commands
+      '(("g" "🎯 GTD 個人總控儀表板 (Dashboard)"
+         ((agenda "" ((org-agenda-span 'day)
+                      (org-agenda-overriding-header "📅 今日時間線與排程 (Today's Schedule)")))
+          (todo "NEXT" ((org-agenda-overriding-header "⚡ 可立即執行的下一步行動 (Next Actions by Context)")))
+          (todo "WAITING" ((org-agenda-overriding-header "⏳ 等待外部回覆事項 (Waiting For)")))
+          (tags "CATEGORY=\"Projects\"" ((org-agenda-overriding-header "🎯 進行中重大專案 (Active Projects)")))))))
+
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map "\C-cc" 'org-capture)
@@ -268,7 +304,21 @@
 ;(use-package gemini-cli :ensure t
 ;  :vc (:url "https://github.com/linchen2chris/gemini-cli.el" :rev :newest)
 ;  :config (gemini-cli-mode)
-;  :bind-keymap ("C-c c" . gemini-cli-command-map)) ;; or your preferred key
+					;  :bind-keymap ("C-c c" . gemini-cli-command-map)) ;; or your preferred key
+
+;; try to fix vterm display issue
+(setq default-process-coding-system '(utf-8-unix . utf-8-unix))
+(with-eval-after-load 'vterm
+  ;; 設定 vterm 處理 Coding System 嚴格為 UTF-8
+;  (set-process-coding-system 'utf-8)
+  ;; 微幅增加渲染計時器延遲，確保完整的 UTF-8 多位元組字串組合完畢才繪製 (預設 0.01)
+  (setq vterm-timer-delay 0.03)
+  ;; 提高滾動緩衝區上限
+  (setq vterm-max-scrollback 10000)
+  ;; 將 C-c 直接傳給終端程式（例如 Codex CLI），不要留給 Emacs 當 prefix key。
+  (define-key vterm-mode-map (kbd "C-c") #'vterm-send-C-c)
+  ;; C-c 已保留給終端程式，改用 C-M-l 清空 vterm 滾動紀錄。
+  (define-key vterm-mode-map (kbd "C-M-l") #'vterm-clear-scrollback))
 
 ; beancount mode
 (use-package beancount
@@ -281,3 +331,7 @@
   :bind (:map beancount-mode-map
               ("C-c C-n" . outline-next-visible-heading)
               ("C-c C-p" . outline-previous-visible-heading)))
+
+; Hard code customize beancount-mode to support auto-complete for chinese account, leave it as comment because I manually fix it in package
+;(with-eval-after-load 'beancount
+;  (setq beancount-account-regexp "\\(?:Assets\\|E\\(?:quity\\|xpenses\\)\\|Income\\|Liabilities\\)\\(?::[[:alnum:][:upper:][:digit:]][[:alnum:]-_]+\\)+"))
