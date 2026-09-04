@@ -17,15 +17,14 @@
 
 
 (custom-set-variables
- ;; custom-set-variables was added by Custom._
+ ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(column-number-mode t)
  '(current-language-environment "UTF-8")
  '(org-agenda-files
-   '("~/orgfiles/personal.org"
-     "~/orgfiles/journal.org"
+   '("~/orgfiles/personal.org" "~/orgfiles/journal.org"
      "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
  '(package-archives
    '(("gnu" . "https://elpa.gnu.org/packages/")
@@ -47,7 +46,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:inherit nil :extend nil :stipple nil :background "#002b36" :foreground "#839496" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 160 :width normal :foundry "nil" :family "Monaco")))))
 
 
 (load-theme 'solarized-dark t)
@@ -157,10 +156,9 @@
 
 ;; Setup Org-Mode (GTD & Capture Templates)
 (setq org-agenda-files '("~/orgfiles/personal.org"
-                         "~/orgfiles/journal.org"
-                         "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
+                         "~/orgfiles/journal.org"))
 (setq org-todo-keywords
-      '((sequence "TODO(t!)" "NEXT(n!)" "WAITING(w@/!)" "SOMEDAY(s!)" "|" "DONE(d@)" "CANCELLED(c@)")))
+      '((sequence "TODO(t!)" "WAITING(w@/!)" "SOMEDAY(s!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
 (setq org-tag-alist '((:startgroup)
                       ("@computer" . ?c)
@@ -173,7 +171,10 @@
                       ("running"   . ?R)
                       ("travel"    . ?T)
                       ("family"    . ?F)
-                      ("finance"   . ?$)))
+                      ("finance"   . ?$)
+                      ("work"      . ?W)
+                      ("admin"     . ?A)
+                      ("project"   . ?P)))
 
 (with-eval-after-load 'org (global-org-modern-mode))
 (setq org-modern-fold-stars
@@ -193,22 +194,26 @@
 (add-hook 'org-mode-hook 'org-indent-mode)
 
 (setq org-capture-templates
-      '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "00_INBOX / Quick Capture (收集箱)")
+      '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
          "* TODO %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
-        ("n" "⚡ 下一步行動 (Next Action)" entry (file+headline "~/orgfiles/personal.org" "01_NEXT ACTIONS (下一步行動清單 - 按情境 Context 分流)")
-         "* NEXT %?\n  SCHEDULED: %t\n  記錄時間：%U" :empty-lines 1)
-        ("r" "🏃 跑步/生理速記 (Running)" entry (file+headline "~/orgfiles/personal.org" "00_INBOX / Quick Capture (收集箱)")
+        ("w" "🏢 下班工作速記 (Work Quick Capture)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
+         "* TODO %? :work:\n  記錄時間：%U\n  備註：週五 WFH 或隔日進公司轉錄至 work.org" :empty-lines 1)
+        ("r" "🏃 跑步/生理速記 (Running)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
          "* TODO %? :running:health:\n  記錄時間：%U" :empty-lines 1)
-        ("t" "Tasks (舊版任務)" entry (file+headline "~/orgfiles/journal.org" "Inbox") "* TODO %?\n %U")
-        ("j" "Journal Entry (日誌)" entry (file+olp+datetree "~/orgfiles/journal.org") "* %U\n%?")))
+        ("j" "📔 日誌紀錄 (Journal)" entry (file+olp+datetree "~/orgfiles/journal.org")
+         "* %U\n%?")))
 
 (setq org-agenda-custom-commands
       '(("g" "🎯 GTD 個人總控儀表板 (Dashboard)"
          ((agenda "" ((org-agenda-span 'day)
                       (org-agenda-overriding-header "📅 今日時間線與排程 (Today's Schedule)")))
-          (todo "NEXT" ((org-agenda-overriding-header "⚡ 可立即執行的下一步行動 (Next Actions by Context)")))
+          (todo "TODO" ((org-agenda-overriding-header "⚡ 可立即執行的待辦行動 (Next Actions by Context)")
+                        (org-agenda-todo-ignore-scheduled 'future)
+                        (org-agenda-todo-ignore-deadlines 'future)))
           (todo "WAITING" ((org-agenda-overriding-header "⏳ 等待外部回覆事項 (Waiting For)")))
-          (tags "CATEGORY=\"Projects\"" ((org-agenda-overriding-header "🎯 進行中重大專案 (Active Projects)")))))))
+          (tags "LEVEL=2+project"
+                ((org-agenda-overriding-header "🎯 進行中重大專案 (Active Projects - High Level Overview)")
+                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("DONE" "CANCELLED")))))))))
 
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
