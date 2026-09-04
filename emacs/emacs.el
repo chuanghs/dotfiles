@@ -197,7 +197,7 @@
       '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
          "* TODO %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
         ("w" "🏢 下班工作速記 (Work Quick Capture)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
-         "* TODO %? :work:\n  記錄時間：%U\n  備註：週五 WFH 或隔日進公司轉錄至 work.org" :empty-lines 1)
+         "* TODO %? :work:\n  記錄時間：%U\n  備註：週五 WFH 或隔日進公司轉錄至 gtd.org" :empty-lines 1)
         ("r" "🏃 跑步/生理速記 (Running)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
          "* TODO %? :running:health:\n  記錄時間：%U" :empty-lines 1)
         ("j" "📔 日誌紀錄 (Journal)" entry (file+olp+datetree "~/orgfiles/journal.org")
