@@ -158,7 +158,7 @@
 (setq org-agenda-files '("~/orgfiles/personal.org"
                          "~/orgfiles/journal.org"))
 (setq org-todo-keywords
-      '((sequence "TODO(t!)" "WAITING(w@/!)" "SOMEDAY(s!)" "|" "DONE(d@)" "CANCELLED(c@)")))
+      '((sequence "NA(n@)" "WAITING(w@/!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
 (setq org-tag-alist '((:startgroup)
                       ("@computer" . ?c)
@@ -193,13 +193,19 @@
 
 (add-hook 'org-mode-hook 'org-indent-mode)
 
+;; 當 Syncthing 或外部同步更新檔案時，自動重新解析 Org 規則（免按 C-c C-c）
+(add-hook 'after-revert-hook
+          (lambda ()
+            (when (derived-mode-p 'org-mode)
+              (org-set-regexps-and-options))))
+
 (setq org-capture-templates
       '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
-         "* TODO %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
+         "* NA %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
         ("w" "🏢 下班工作速記 (Work Quick Capture)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
-         "* TODO %? :work:\n  記錄時間：%U\n  備註：週五 WFH 或隔日進公司轉錄至 gtd.org" :empty-lines 1)
+         "* NA %? :work:\n  記錄時間：%U\n  備註：週五 WFH 或隔日進公司轉錄至 gtd.org" :empty-lines 1)
         ("r" "🏃 跑步/生理速記 (Running)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
-         "* TODO %? :running:health:\n  記錄時間：%U" :empty-lines 1)
+         "* NA %? :running:health:\n  記錄時間：%U" :empty-lines 1)
         ("j" "📔 日誌紀錄 (Journal)" entry (file+olp+datetree "~/orgfiles/journal.org")
          "* %U\n%?")))
 
@@ -207,9 +213,9 @@
       '(("g" "🎯 GTD 個人總控儀表板 (Dashboard)"
          ((agenda "" ((org-agenda-span 'day)
                       (org-agenda-overriding-header "📅 今日時間線與排程 (Today's Schedule)")))
-          (todo "TODO" ((org-agenda-overriding-header "⚡ 可立即執行的待辦行動 (Next Actions by Context)")
-                        (org-agenda-todo-ignore-scheduled 'future)
-                        (org-agenda-todo-ignore-deadlines 'future)))
+          (todo "NA" ((org-agenda-overriding-header "⚡ 可立即執行的待辦行動 (Next Actions by Context)")
+                      (org-agenda-todo-ignore-scheduled 'future)
+                      (org-agenda-todo-ignore-deadlines 'future)))
           (todo "WAITING" ((org-agenda-overriding-header "⏳ 等待外部回覆事項 (Waiting For)")))
           (tags "LEVEL=2+project"
                 ((org-agenda-overriding-header "🎯 進行中重大專案 (Active Projects - High Level Overview)")
