@@ -158,7 +158,7 @@
 (setq org-agenda-files '("~/orgfiles/personal.org"
                          "~/orgfiles/journal.org"))
 (setq org-todo-keywords
-      '((sequence "NA(n@)" "WAITING(w@/!)" "|" "DONE(d@)" "CANCELLED(c@)")))
+      '((sequence "NA(n)" "WAITING(w@/!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
 (setq org-tag-alist '((:startgroup)
                       ("@computer" . ?c)
