@@ -156,7 +156,8 @@
 
 ;; Setup Org-Mode (GTD & Capture Templates)
 (setq org-agenda-files '("~/orgfiles/personal.org"
-                         "~/orgfiles/journal.org"))
+                         "~/orgfiles/journal.org"
+                         "~/orgfiles/mac_calendar.org"))
 (setq org-todo-keywords
       '((sequence "NA(n@)" "WAITING(w@/!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
@@ -176,7 +177,10 @@
                       ("admin"     . ?A)
                       ("project"   . ?P)))
 
-(with-eval-after-load 'org (global-org-modern-mode))
+(with-eval-after-load 'org
+  ;; 斷開 project 標籤向下繼承，避免子任務繼承 :project: 污染 Agenda 與 beorg 視圖
+  (add-to-list 'org-tags-exclude-from-inheritance "project")
+  (global-org-modern-mode))
 (setq org-modern-fold-stars
       '(("▶" . "▼")
         ("▷" . "▽")
@@ -217,13 +221,63 @@
                       (org-agenda-todo-ignore-scheduled 'future)
                       (org-agenda-todo-ignore-deadlines 'future)))
           (todo "WAITING" ((org-agenda-overriding-header "⏳ 等待外部回覆事項 (Waiting For)")))
-          (tags "LEVEL=2+project"
+          (tags "project"
                 ((org-agenda-overriding-header "🎯 進行中重大專案 (Active Projects - High Level Overview)")
                  (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo '("DONE" "CANCELLED")))))))))
+
+;; 自動自 macOS Calendar 同步行程 (透過 icalBuddy，具備 15 分鐘快取防卡頓)
+(defun my/sync-mac-calendar (&rest _args)
+  "Sync macOS Calendar events via icalBuddy with 15-minute caching."
+  (interactive)
+  (let* ((cal-file (expand-file-name "~/orgfiles/mac_calendar.org"))
+         (script (expand-file-name "~/orgfiles/scripts/sync_mac_calendar.py"))
+         (mod-time (and (file-exists-p cal-file)
+                        (float-time (file-attribute-modification-time (file-attributes cal-file)))))
+         (now (float-time))
+         (threshold (* 15 60)))
+    (when (or (called-interactively-p 'interactive)
+              (not mod-time)
+              (> (- now mod-time) threshold))
+      (message "Syncing macOS calendar via icalBuddy...")
+      (let ((exit-code (call-process "python3" nil nil nil script)))
+        (if (zerop exit-code)
+            (message "macOS calendar synced successfully.")
+          (message "Failed to sync macOS calendar (exit code %d)." exit-code))))))
+
+(advice-add 'org-agenda :before #'my/sync-mac-calendar)
 
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map "\C-cc" 'org-capture)
+
+;; 全域專案檔案 Refile 設定 (跨檔案分派至 projects/、travel/、personal.org 等)
+(defun my/org-project-files ()
+  "動態掃描全域專案 Org 檔案清單（排除暫存、同步衝突與衍生檔案）。"
+  (let ((search-dirs (list (expand-file-name "~/orgfiles/projects")
+                           (expand-file-name "~/orgfiles/travel/projects")
+                           (expand-file-name "~/orgfiles/running/training_plans"))))
+    (seq-filter
+     (lambda (file)
+       (and (file-regular-p file)
+            (not (string-match-p "/\\." file))                     ;; 排除隱藏檔
+            (not (string-match-p "sync-conflict" file))            ;; 排除 Syncthing 衝突檔
+            (not (string-match-p "itinerary_mobile\\.org$" file))  ;; 排除隨身口袋書 (自動產生)
+            (not (string-match-p "-travel-guide\\.org$" file))))   ;; 排除出版原稿
+     (apply #'append
+            (mapcar (lambda (dir)
+                      (if (file-directory-p dir)
+                          (directory-files-recursively dir "\\.org$")
+                        nil))
+                    search-dirs)))))
+
+(setq org-refile-targets
+      '((nil :maxlevel . 3)                   ;; 當前檔案前 3 層標題
+        (org-agenda-files :maxlevel . 3)      ;; Agenda 核心檔案 (personal.org, journal.org)
+        (my/org-project-files :maxlevel . 3))) ;; 全域專案檔案 (含 projects/family-finance-dashboard/ 等)
+
+(setq org-refile-use-outline-path 'file)       ;; 補全路徑以「檔案名稱/標題」顯示，避免跨檔案同名標題混淆
+(setq org-outline-path-complete-in-steps nil)  ;; 配合 Vertico 一次輸入整個大綱路徑進行模糊搜尋
+(setq org-refile-allow-creating-parent-nodes 'confirm) ;; 允許在 Refile 時動態確認建立新父節點
 
 (setq org-hide-emphasis-markers t)
 ;(add-hook 'org-mode-hook 'visual-line-mode)
