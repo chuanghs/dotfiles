@@ -1,13 +1,10 @@
 ;;; -*- lexical-binding: t -*-
 
-;; for performance
-(setq jit-lock-stealth-time 1.25)
-(setq jit-lock-stealth-nice 0.5) ;; Seconds between font locking.
-(setq jit-lock-chunk-size 4096)
-(setq jit-lock-defer-time 0.25)
+;;; ============================================================================
+;;; 1. 基礎環境、編碼與套件系統 (Environment, Encoding & Packages)
+;;; ============================================================================
 
-;; enforce utf-8
-;; Force UTF-8 for everything
+;; 強制全域 UTF-8 編碼
 (set-language-environment "UTF-8")
 (setq locale-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
@@ -15,7 +12,30 @@
 (set-selection-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
+;; 套件管理系統初始化 (確保批次測試與非交互啟動時能正確載入套件)
+(require 'package)
+(unless (bound-and-true-p package--initialized)
+  (package-initialize))
 
+;; 使用者身分資訊
+(setq user-full-name "Zombie Chuang"
+      user-mail-address "chuanghs@gmail.com")
+
+;; 啟動記憶體釋放最佳化 (啟動時擴大 GC 門檻至 64MB，完成後恢復為 800KB)
+(setq gc-cons-threshold 64000000)
+(add-hook 'after-init-hook
+          (lambda ()
+            (setq gc-cons-threshold 800000)))
+
+;; 即時字型繪製效能最佳化 (Jit-lock performance)
+(setq jit-lock-stealth-time 1.25)
+(setq jit-lock-stealth-nice 0.5) ;; Seconds between font locking
+(setq jit-lock-chunk-size 4096)
+(setq jit-lock-defer-time 0.25)
+
+;; ----------------------------------------------------------------------------
+;; Custom 自動產生之設定與字型 (由 Emacs Custom 管理)
+;; ----------------------------------------------------------------------------
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -25,7 +45,7 @@
  '(current-language-environment "UTF-8")
  '(org-agenda-files
    '("~/orgfiles/personal.org" "~/orgfiles/journal.org"
-     "~/orgfiles/travel/projects/2026-sydney-marathon/info.org"))
+     "~/orgfiles/mac_calendar.org"))
  '(package-archives
    '(("gnu" . "https://elpa.gnu.org/packages/")
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
@@ -41,6 +61,7 @@
    '((gemini-cli :url "https://github.com/linchen2chris/gemini-cli.el")))
  '(tool-bar-mode nil)
  '(vulpea-db-sync-directories '("~/orgfiles")))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -49,118 +70,142 @@
  '(default ((t (:inherit nil :extend nil :stipple nil :background "#002b36" :foreground "#839496" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight regular :height 160 :width normal :foundry "nil" :family "Monaco")))))
 
 
+;;; ============================================================================
+;;; 2. 介面視覺與編輯體驗 (UI & Appearance)
+;;; ============================================================================
+
 (load-theme 'solarized-dark t)
- (menu-bar-mode -1)
- (tool-bar-mode -1)
- (scroll-bar-mode -1)
- (column-number-mode)
- (show-paren-mode)
- (global-hl-line-mode)
- (winner-mode t)
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(column-number-mode 1)
+(show-paren-mode 1)
+(global-hl-line-mode 1)
+(winner-mode 1)
+
+;; 全域自動重載檔案 (搭配 Syncthing / beorg 同步時偵測變更)
+(global-auto-revert-mode t)
+(setq auto-revert-check-vc-info t)
 
 
-;; Faster startup
-(setq gc-cons-threshold 64000000)
-(add-hook 'after-init-hook #'(lambda()
-			       (setq gc-cons-threshold 800000)))
+;;; ============================================================================
+;;; 3. 補全系統與輸入增強 (Completion System: Corfu / Vertico / Orderless)
+;;; ============================================================================
+
+;; 緩衝區內即時自動補全 (In-buffer Completion - Corfu)
+(global-corfu-mode 1)
+(setq tab-always-indent 'complete)
+
+;; Minibuffer 垂直清單補全 (Minibuffer UI - Vertico)
+(use-package vertico
+  :init
+  (vertico-mode +1))
+
+;; Minibuffer 候選項目詳細註解 (Marginalia)
+(use-package marginalia
+  :bind (:map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+  :init
+  (marginalia-mode))
+
+;; 進階模糊與正規匹配樣式 (Orderless)
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 
 
-(setq user-full-name "Zombie Chuang" user-mail-address "chuanghs@gmail.com")
+;;; ============================================================================
+;;; 4. 專案管理與版本控制 (Project Management & Magit)
+;;; ============================================================================
 
-;; projectile
+;; Projectile 專案導覽與搜尋
 (use-package projectile
   :ensure t
   :init
   (setq projectile-project-search-path '("~/Projects/"))
   :config
-  ;; I typically use this keymap prefix on macOS
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (global-set-key (kbd "C-c p") 'projectile-command-map)
   (projectile-mode +1))
 
+;; Magit Git 操作界面
 (use-package magit
   :ensure t
-  :bind (("C-x g" . magit-status))
-  )
+  :bind (("C-x g" . magit-status)))
 
-;; Try setup python
-;; check tree-sitter exist in emacs
-;; M-: (treesit-available-p) RET should be t
-;; install python languar grammer
-;; M-x treesit-install-language-grammer RET type python
+
+;;; ============================================================================
+;;; 5. 程式語言開發與 LSP 支援 (Languages & LSP)
+;;; ============================================================================
+
+;; Python 模式重對應至 Tree-sitter
 (setq major-mode-remap-alist '((python-mode . python-ts-mode)))
-;; install python3-pylsp from console
-;; package-install corfu
+
 (use-package python
   :mode ("\\.py\\'" . python-ts-mode)
   :hook (python-ts-mode . eglot-ensure))
-;  :config
-;  (add-to-list 'eglot-server-programs
-;	       '(python-ts-mode . ("pyright-langserver" "--stdio"))))
 
+;; Python 虛擬環境切換
 (use-package pyvenv
   :init
   (require 'widget)
-  :config (pyvenv-mode 1))
-
-(use-package eglot
-  :ensure t
-  :defer
-  :hook ((swift-mode . eglot-ensure)
-	 (python-mode . eglot-ensure)
-	 (python-ts-mode . eglot-ensure)
-	 (go-mode . eglot-ensure) )
-  ;; optimize eglot
   :config
-   ;; 告訴 Eglot 如何啟動 sourcekit-lsp
-  (add-to-list 'eglot-server-programs
-               '(swift-mode . ("sourcekit-lsp"))
-	       '(python-ts-mode . ("pyright-langserver" "--stdio")))
-  (setq eglot-sync-connect nil)  ;; async connection, prevent jam emacs
-  (setq eglot-connect-timeout 60)   ;; increase timeout for large project
-  :custom
-  (eglot-confirm-server-initiated-edits nil)
-  (eglot-extend-to-xref t)
-  (eglot-autoshutdown t)
-  )
+  (pyvenv-mode 1))
 
-(use-package swift-mode
-  :ensure t
-  :mode ("\\.swift\\'" . swift-mode))
-; switf-ts-mode cannodt handle font-lock for keyword:
-;(use-package swift-ts-mode
-;  :ensure t
-;  :mode ("\\.swift\\'" . swift-ts-mode) ;; 自動將 .swift 檔案關聯到此模式
-;  :config
-;; 連結 Eglot 與 SourceKit-LSP, 應該可以用 eglot 裡的設定取代
-;; (add-to-list 'eglot-server-programs
-;;               '(swift-ts-mode . ("sourcekit-lsp"))) 
-  ;; 設定當進入 swift-ts-mode 時自動啟動 Eglot
-					;  (add-hook 'swift-ts-mode-hook 'eglot-ensure))
-
-
+;; Python Black 自動排版
 (use-package python-black
   :ensure t
   :demand t
   :after python
   :hook ((python-mode . python-black-on-save-mode)))
-(with-eval-after-load 'eglot
+
+;; Swift 語法支援
+(use-package swift-mode
+  :ensure t
+  :mode ("\\.swift\\'" . swift-mode))
+
+;; 備註：swift-ts-mode 在關鍵字 font-lock 仍有未解問題，維持保留註解
+;; (use-package swift-ts-mode
+;;   :ensure t
+;;   :mode ("\\.swift\\'" . swift-ts-mode))
+
+;; Eglot 語言伺服器協議 (LSP) 用戶端
+(use-package eglot
+  :ensure t
+  :defer
+  :hook ((swift-mode . eglot-ensure)
+         (python-mode . eglot-ensure)
+         (python-ts-mode . eglot-ensure)
+         (go-mode . eglot-ensure))
+  :config
+  ;; 伺服器啟動指令註冊
+  (add-to-list 'eglot-server-programs '(swift-mode . ("sourcekit-lsp")))
   (add-to-list 'eglot-server-programs
                '(python-ts-mode . ("pyright-langserver" "--stdio" :initializationOptions (:format (:enabled :json-false)))))
-  )
+  (setq eglot-sync-connect nil)    ;; 非同步連線，防範啟動阻塞
+  (setq eglot-connect-timeout 60) ;; 提高大型專案逾時門檻
+  :custom
+  (eglot-confirm-server-initiated-edits nil)
+  (eglot-extend-to-xref t)
+  (eglot-autoshutdown t))
 
 
-;; Completion UI
-(global-corfu-mode)
-(setq tab-always-indent 'complete)
+;;; ============================================================================
+;;; 6. Org-mode 核心、GTD 工作流與行事曆整合 (Org-mode, GTD & Calendar)
+;;; ============================================================================
 
-;; Setup Org-Mode (GTD & Capture Templates)
+;; 核心 Agenda 檔案清單
 (setq org-agenda-files '("~/orgfiles/personal.org"
                          "~/orgfiles/journal.org"
                          "~/orgfiles/mac_calendar.org"))
+
+;; GTD 任務狀態機：NA (下一步行動)、WAITING (等待) | DONE (完成)、CANCELLED (取消)
 (setq org-todo-keywords
       '((sequence "NA(n@)" "WAITING(w@/!)" "|" "DONE(d@)" "CANCELLED(c@)")))
 
+;; GTD 情境與分類標籤
 (setq org-tag-alist '((:startgroup)
                       ("@computer" . ?c)
                       ("@phone"    . ?p)
@@ -181,6 +226,8 @@
   ;; 斷開 project 標籤向下繼承，避免子任務繼承 :project: 污染 Agenda 與 beorg 視圖
   (add-to-list 'org-tags-exclude-from-inheritance "project")
   (global-org-modern-mode))
+
+;; org-modern 大綱折疊符號
 (setq org-modern-fold-stars
       '(("▶" . "▼")
         ("▷" . "▽")
@@ -203,6 +250,7 @@
             (when (derived-mode-p 'org-mode)
               (org-set-regexps-and-options))))
 
+;; Org Capture 收集箱範本
 (setq org-capture-templates
       '(("i" "📥 快速收集箱 (Inbox)" entry (file+headline "~/orgfiles/personal.org" "📥 00_INBOX / Quick Capture (收集箱)")
          "* NA %?\n  記錄時間：%U\n  來源鏈接：%a" :empty-lines 1)
@@ -213,6 +261,7 @@
         ("j" "📔 日誌紀錄 (Journal)" entry (file+olp+datetree "~/orgfiles/journal.org")
          "* %U\n%?")))
 
+;; 客製化 Agenda 儀表板視圖
 (setq org-agenda-custom-commands
       '(("g" "🎯 GTD 個人總控儀表板 (Dashboard)"
          ((agenda "" ((org-agenda-span 'day)
@@ -246,6 +295,7 @@
 
 (advice-add 'org-agenda :before #'my/sync-mac-calendar)
 
+;; 全域 Org 快捷鍵
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
 (define-key global-map "\C-cc" 'org-capture)
@@ -273,54 +323,30 @@
 (setq org-refile-targets
       '((nil :maxlevel . 3)                   ;; 當前檔案前 3 層標題
         (org-agenda-files :maxlevel . 3)      ;; Agenda 核心檔案 (personal.org, journal.org)
-        (my/org-project-files :maxlevel . 3))) ;; 全域專案檔案 (含 projects/family-finance-dashboard/ 等)
+        (my/org-project-files :maxlevel . 3)  ;; 全域專案檔案 (含 projects/family-finance-dashboard/ 等)
+        ("~/orgfiles/reading-list.org" :maxlevel . 3))) ;; 📚 個人閱讀與主題書庫
 
 (setq org-refile-use-outline-path 'file)       ;; 補全路徑以「檔案名稱/標題」顯示，避免跨檔案同名標題混淆
 (setq org-outline-path-complete-in-steps nil)  ;; 配合 Vertico 一次輸入整個大綱路徑進行模糊搜尋
 (setq org-refile-allow-creating-parent-nodes 'confirm) ;; 允許在 Refile 時動態確認建立新父節點
-
 (setq org-hide-emphasis-markers t)
-;(add-hook 'org-mode-hook 'visual-line-mode)
 
-;; enable vulpea for better org-mode, vulpea is org-mode's database layer
+
+;;; ============================================================================
+;;; 7. 知識庫與雙向連結筆記 (Knowledge Base: Vulpea & Org-roam)
+;;; ============================================================================
+
+;; Vulpea: Org-mode 資料庫層
 (use-package vulpea)
-
-;; build database, 1st time only
-;; (vulpea-db-sync-full-scan)
-;; enable auto-sync
 (vulpea-db-autosync-mode +1)
-;;
-;; M-x vulpea-find - find and open notes
-;; M-x vulpea-insert - insert link to a note
-;; NEXT STEP: introduce org-roam for personal knowledge management ?
 
-
-;; Enable Vertico
-(use-package vertico
-  :init
-  (vertico-mode +1))
-
-;; Enable Marginalia for descriptions in the Vertico minibuffer
-(use-package marginalia
-  :bind (:map minibuffer-local-map
-         ("M-A" . marginalia-cycle))
-  :init
-  (marginalia-mode))
-
-;; Use Orderless for advanced pattern matching
-(use-package orderless
-  :custom
-  (completion-styles '(orderless basic))
-  (completion-category-defaults nil)
-  (completion-category-overrides '((file (styles basic partial-completion)))))
-
-
-;; setup roam
+;; Deadgrep 搜尋 Org-Roam 目錄
 (use-package deadgrep)
 (defun org-roam-deadgrep (arg)
   (interactive "MSearch term: ")
   (deadgrep arg org-roam-directory))
 
+;; Org-Roam 雙向鏈結網路
 (use-package org-roam
   :ensure t
   :init
@@ -328,15 +354,15 @@
   :config
   ;; 啟動模式與同步
   (org-roam-db-autosync-mode 1)
-  ;; utf-8 node name
+  ;; UTF-8 節點名稱捕獲範本
   (setq org-roam-capture-templates
-	'(("d" "default" plain "%?"
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" 
+        '(("d" "default" plain "%?"
+           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                               "#+title: ${title}\n#+created: %U\n")
-           :unnarrowed t)))  
+           :unnarrowed t)))
   ;; 節點顯示模板
-;  (setq org-roam-node-display-template "${title} ${tags}")
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (setq org-roam-node-display-template
+        (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
 
   ;; 視窗佈局設定
   (add-to-list 'display-buffer-alist
@@ -346,51 +372,40 @@
                  (window-width . 0.33)
                  (window-height . fit-window-to-buffer)))
   :bind (("C-c n f" . org-roam-node-find)
-           ("C-c n r" . org-roam-node-random)		    
-           ("C-c n c" . org-roam-capture)
-           ("C-c n g" . org-roam-graph)
-	   ("C-c n s" . org-roam-deadgrep)
-	   ("C-c n y" . org-roam-copy-node)
-           (:map org-mode-map
-                 (
-		  
-		  ("C-c n i" . org-roam-node-insert)
-		  ("C-c n I" . org-roam-node-insert-immediate)
-                  ("C-c n o" . org-id-get-create)
-                  ("C-c n t" . org-roam-tag-add)
-                  ("C-c n a" . org-roam-alias-add)
-		  ("C-c n l" . org-roam-buffer-toggle)	   
-		  ))))
+         ("C-c n r" . org-roam-node-random)
+         ("C-c n c" . org-roam-capture)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n s" . org-roam-deadgrep)
+         ("C-c n y" . org-roam-copy-node)
+         (:map org-mode-map
+               (("C-c n i" . org-roam-node-insert)
+                ("C-c n I" . org-roam-node-insert-immediate)
+                ("C-c n o" . org-id-get-create)
+                ("C-c n t" . org-roam-tag-add)
+                ("C-c n a" . org-roam-alias-add)
+                ("C-c n l" . org-roam-buffer-toggle)))))
 
-;; enable gemini-cli
-;; for eat terminal backend:
+
+;;; ============================================================================
+;;; 8. 終端機整合與實用工具 (Terminals & Utilities)
+;;; ============================================================================
+
+;; Eat 終端模擬器 (Terminal Backend)
 (use-package eat :ensure t)
 
-;; for vterm terminal backend:
-;(use-package vterm :ensure t)
-;; for slash commands popup
-;(use-package popup :ensure t)
-;; install gemini-cli.el
-;(use-package gemini-cli :ensure t
-;  :vc (:url "https://github.com/linchen2chris/gemini-cli.el" :rev :newest)
-;  :config (gemini-cli-mode)
-					;  :bind-keymap ("C-c c" . gemini-cli-command-map)) ;; or your preferred key
-
-;; try to fix vterm display issue
+;; Vterm 終端調校
 (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
 (with-eval-after-load 'vterm
-  ;; 設定 vterm 處理 Coding System 嚴格為 UTF-8
-;  (set-process-coding-system 'utf-8)
   ;; 微幅增加渲染計時器延遲，確保完整的 UTF-8 多位元組字串組合完畢才繪製 (預設 0.01)
   (setq vterm-timer-delay 0.03)
   ;; 提高滾動緩衝區上限
   (setq vterm-max-scrollback 10000)
-  ;; 將 C-c 直接傳給終端程式（例如 Codex CLI），不要留給 Emacs 當 prefix key。
+  ;; 將 C-c 直接傳給終端程式（例如 CLI 工具），不要留給 Emacs 當 prefix key
   (define-key vterm-mode-map (kbd "C-c") #'vterm-send-C-c)
-  ;; C-c 已保留給終端程式，改用 C-M-l 清空 vterm 滾動紀錄。
+  ;; C-c 已保留給終端程式，改用 C-M-l 清空 vterm 滾動紀錄
   (define-key vterm-mode-map (kbd "C-M-l") #'vterm-clear-scrollback))
 
-; beancount mode
+;; Beancount 複式記帳模式
 (use-package beancount
   :ensure t
   :mode ("\\.beancount\\'" . beancount-mode)
@@ -402,9 +417,4 @@
               ("C-c C-n" . outline-next-visible-heading)
               ("C-c C-p" . outline-previous-visible-heading)))
 
-; Hard code customize beancount-mode to support auto-complete for chinese account, leave it as comment because I manually fix it in package
-;(with-eval-after-load 'beancount
-;  (setq beancount-account-regexp "\\(?:Assets\\|E\\(?:quity\\|xpenses\\)\\|Income\\|Liabilities\\)\\(?::[[:alnum:][:upper:][:digit:]][[:alnum:]-_]+\\)+"))
-(global-auto-revert-mode t)
-(setq auto-revert-check-vc-info t)
-
+;;; emacs.el ends here
