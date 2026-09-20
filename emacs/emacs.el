@@ -14,6 +14,7 @@
 
 ;; 套件管理系統初始化 (確保批次測試與非交互啟動時能正確載入套件)
 (require 'package)
+(require 'cl-lib)
 (unless (bound-and-true-p package--initialized)
   (package-initialize))
 
@@ -330,6 +331,35 @@
 (setq org-outline-path-complete-in-steps nil)  ;; 配合 Vertico 一次輸入整個大綱路徑進行模糊搜尋
 (setq org-refile-allow-creating-parent-nodes 'confirm) ;; 允許在 Refile 時動態確認建立新父節點
 (setq org-hide-emphasis-markers t)
+
+;; Refile 至 reading-list.org 時自動塑形與結構標準化
+(defun my/org-enrich-reading-list-on-refile ()
+  "當條目 Refile 至 reading-list.org 時，自動剝除來源 NA/WAITING、轉為 TODO/READING 並補齊標準骨架。"
+  (when (and (buffer-file-name)
+             (string-match-p "reading-list\\.org$" (buffer-file-name)))
+    (save-excursion
+      (org-back-to-heading t)
+      (let* ((outline (org-get-outline-path))
+             (is-reading (cl-some (lambda (s) (string-match-p "CURRENTLY READING" s)) outline))
+             (target-state (if is-reading "READING" "TODO"))
+             (category (or (car (last outline)) "未分類"))
+             (today (format-time-string "[%Y-%m-%d %a]"))
+             (entry-end (save-excursion (org-end-of-subtree t t))))
+        ;; 1. 剝除來源標題可能殘留的 NA 或 WAITING 前綴
+        (let ((case-fold-search nil))
+          (when (looking-at org-complex-heading-regexp)
+            (let ((title (match-string 4)))
+              (when (and title (string-match "^\\(NA\\|WAITING\\)[ \t]+" title))
+                (org-edit-headline (replace-regexp-in-string "^\\(NA\\|WAITING\\)[ \t]+" "" title))))))
+        ;; 2. 設定符合 reading-list 狀態機之關鍵字
+        (org-todo target-state)
+        ;; 3. 若尚未具備「- 開始時間：」則自動插入標準欄位
+        (unless (save-excursion (re-search-forward "^[ \t]*- 開始時間：" entry-end t))
+          (org-end-of-meta-data t)
+          (insert (format "- 開始時間：%s\n- 領域分類：%s\n- 閱讀筆記：尚未建立（待閱讀精讀後透過 ~M-x org-roam-node-find~ 建立關聯）\n"
+                          today category)))))))
+
+(add-hook 'org-after-refile-insert-hook #'my/org-enrich-reading-list-on-refile)
 
 
 ;;; ============================================================================
