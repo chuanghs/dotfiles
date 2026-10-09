@@ -84,9 +84,17 @@
 (global-hl-line-mode 1)
 (winner-mode 1)
 
-;; 全域自動重載檔案 (搭配 Syncthing / beorg 同步時偵測變更)
-(global-auto-revert-mode t)
-(setq auto-revert-check-vc-info t)
+;; ----------------------------------------------------------------------------
+;; 全域自動重載設定 (Auto-Revert: 搭配 Syncthing / beorg 同步無感更新)
+;; ----------------------------------------------------------------------------
+(setq auto-revert-interval 3)                 ;; 背景輪詢間隔 3 秒，兼顧同步即時性與 CPU 負載
+(setq auto-revert-check-vc-info nil)          ;; 停用版本控制狀態檢查，杜絕 Git 同步阻塞與卡頓 (Hang/Freeze)
+(setq auto-revert-verbose nil)                ;; 靜音重載提示，避免頻繁覆蓋 Minibuffer / Echo Area 打斷輸入
+(setq auto-revert-use-notify t)               ;; 啟用系統層級檔案變更通知 (macOS kqueue/FSEvents)
+(setq auto-revert-avoid-polling nil)          ;; 檔案通知與輪詢並行，確保 Syncthing 跨裝置同步不遺漏
+(setq global-auto-revert-non-file-buffers t)  ;; 同步更新 Dired 等非檔案緩衝區
+(setq revert-without-query '(".*"))           ;; 未於 Emacs 編輯之緩衝區變更時，靜默重載不彈出確認詢問
+(global-auto-revert-mode 1)
 
 
 ;;; ============================================================================
@@ -262,12 +270,35 @@
         ("j" "📔 日誌紀錄 (Journal)" entry (file+olp+datetree "~/orgfiles/journal.org")
          "* %U\n%?")))
 
+;; 跳過父專案容器之過濾函式（確保 Next Actions 僅呈現真正可立即執行的葉節點行動）
+(defun my/org-agenda-skip-parent-projects ()
+  "在 Agenda 視圖中跳過父專案容器項目。
+若目前項目帶有 :project: 標籤，或其子樹 (Subtree) 內含有其他子待辦任務
+（子標題具有 `org-get-todo-state`），則判定為專案容器並跳過該父標題本身
+（回傳下一個標題位置），確保僅呈現真正可立即執行的葉節點行動。"
+  (let* ((subtree-end (save-excursion (org-end-of-subtree t)))
+         (is-parent
+          (or (member "project" (org-get-tags))
+              (save-excursion
+                (let ((has-child-todo nil))
+                  (while (and (not has-child-todo)
+                              (outline-next-heading)
+                              (< (point) subtree-end))
+                    (when (org-get-todo-state)
+                      (setq has-child-todo t)))
+                  has-child-todo)))))
+    (when is-parent
+      (save-excursion
+        (or (outline-next-heading)
+            (point-max))))))
+
 ;; 客製化 Agenda 儀表板視圖
 (setq org-agenda-custom-commands
       '(("g" "🎯 GTD 個人總控儀表板 (Dashboard)"
          ((agenda "" ((org-agenda-span 'day)
                       (org-agenda-overriding-header "📅 今日時間線與排程 (Today's Schedule)")))
           (todo "NA" ((org-agenda-overriding-header "⚡ 可立即執行的待辦行動 (Next Actions by Context)")
+                      (org-agenda-skip-function #'my/org-agenda-skip-parent-projects)
                       (org-agenda-todo-ignore-scheduled 'future)
                       (org-agenda-todo-ignore-deadlines 'future)))
           (todo "WAITING" ((org-agenda-overriding-header "⏳ 等待外部回覆事項 (Waiting For)")))
